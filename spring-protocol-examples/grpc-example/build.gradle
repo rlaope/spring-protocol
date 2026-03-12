@@ -27,6 +27,7 @@ protobuf {
 }
 
 dependencies {
+    implementation project(':spring-protocol-boot')
     implementation project(':spring-protocol-grpc:grpc-client-spring-boot-starter')
 
     implementation 'org.springframework.boot:spring-boot-starter'

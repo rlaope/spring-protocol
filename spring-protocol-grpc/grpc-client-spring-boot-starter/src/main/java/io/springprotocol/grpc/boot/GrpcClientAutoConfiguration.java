@@ -1,5 +1,7 @@
 package io.springprotocol.grpc.boot;
 
+import io.springprotocol.core.spi.ProtocolClientHandler;
+import io.springprotocol.grpc.core.GrpcProtocolClientHandler;
 import io.springprotocol.grpc.core.channel.CachingChannelFactory;
 import io.springprotocol.grpc.core.channel.ChannelFactory;
 import io.springprotocol.grpc.core.proxy.GrpcClientProxyFactory;
@@ -8,19 +10,17 @@ import io.springprotocol.grpc.core.stub.StubFactory;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
  * Auto-configuration for gRPC client infrastructure beans.
- * Provides sensible defaults that can be overridden by user-defined beans.
+ * Registers {@link GrpcProtocolClientHandler} as a {@link ProtocolClientHandler}
+ * for the unified Spring Protocol framework.
  */
 @Configuration
 @EnableConfigurationProperties(GrpcClientProperties.class)
-public class GrpcClientAutoConfiguration implements DisposableBean {
-
-    private ChannelFactory channelFactory;
+public class GrpcClientAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
@@ -31,21 +31,21 @@ public class GrpcClientAutoConfiguration implements DisposableBean {
     @Bean
     @ConditionalOnMissingBean
     public ChannelFactory grpcChannelFactory() {
-        this.channelFactory = new CachingChannelFactory();
-        return this.channelFactory;
+        return new CachingChannelFactory();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "grpcProtocolClientHandler")
+    public ProtocolClientHandler grpcProtocolClientHandler(StubFactory stubFactory,
+                                                            ChannelFactory channelFactory) {
+        return new GrpcProtocolClientHandler(stubFactory, channelFactory);
     }
 
     @Bean
     @ConditionalOnMissingBean
+    @Deprecated
     public GrpcClientProxyFactory grpcClientProxyFactory(StubFactory stubFactory,
                                                           ChannelFactory channelFactory) {
         return new GrpcClientProxyFactory(stubFactory, channelFactory);
-    }
-
-    @Override
-    public void destroy() {
-        if (channelFactory != null) {
-            channelFactory.shutdownAll();
-        }
     }
 }

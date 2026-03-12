@@ -1,16 +1,17 @@
 package io.springprotocol.examples.grpc.client;
 
+import io.springprotocol.core.annotation.ProtocolMapping;
+import io.springprotocol.core.annotation.ProtocolType;
+import io.springprotocol.core.annotation.SpringClient;
 import io.springprotocol.examples.grpc.proto.GreeterGrpc;
 import io.springprotocol.examples.grpc.proto.HelloReply;
 import io.springprotocol.examples.grpc.proto.HelloRequest;
-import io.springprotocol.grpc.core.annotation.GrpcExchange;
-import io.springprotocol.grpc.core.annotation.GrpcMapping;
 
-@GrpcExchange(grpcClass = GreeterGrpc.class, serviceId = "greeter-service")
+@SpringClient(protocol = ProtocolType.GRPC, serviceId = "greeter-service", grpcClass = GreeterGrpc.class)
 public interface GreeterClient {
 
     HelloReply sayHello(HelloRequest request);
 
-    @GrpcMapping("sayHelloAgain")
+    @ProtocolMapping("sayHelloAgain")
     HelloReply greetAgain(HelloRequest request);
 }

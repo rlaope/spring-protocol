@@ -1,5 +1,8 @@
 rootProject.name = 'spring-protocol'
 
+// Core
+include 'spring-protocol-core'
+
 // gRPC Client Modules
 include 'spring-protocol-grpc:grpc-client-core'
 include 'spring-protocol-grpc:grpc-client-spring'

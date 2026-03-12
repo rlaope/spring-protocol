@@ -14,6 +14,9 @@ dependencies {
     implementation project(':spring-protocol-rsocket:rsocket-client-spring-boot-starter')
 
     implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'io.rsocket:rsocket-core:1.1.4'
+    implementation 'io.rsocket:rsocket-transport-netty:1.1.4'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
 }
 
 application {

@@ -1,0 +1,27 @@
+plugins {
+    id 'io.spring.dependency-management'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom 'org.springframework.boot:spring-boot-dependencies:3.2.3'
+    }
+}
+
+dependencies {
+    api project(':spring-protocol-grpc:grpc-client-spring')
+
+    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
+    compileOnly 'org.springframework.boot:spring-boot'
+    compileOnly 'io.grpc:grpc-netty-shaded:1.62.2'
+    compileOnly 'io.grpc:grpc-stub:1.62.2'
+    compileOnly 'io.grpc:grpc-api:1.62.2'
+
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.grpc:grpc-netty-shaded:1.62.2'
+    testImplementation 'io.grpc:grpc-stub:1.62.2'
+    testImplementation 'io.grpc:grpc-api:1.62.2'
+}

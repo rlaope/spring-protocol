@@ -57,6 +57,9 @@ public class SpringClientRegistrar implements ImportBeanDefinitionRegistrar {
                         if (sc.grpcClass() != void.class) {
                             attributes.put("grpcClass", sc.grpcClass());
                         }
+                        if (sc.stubCreator() != void.class) {
+                            attributes.put("stubCreator", sc.stubCreator());
+                        }
                     }
 
                     if (protocol == null || serviceId == null) {

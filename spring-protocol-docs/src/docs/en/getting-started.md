@@ -54,6 +54,31 @@ spring:
           address: localhost:7000
 ```
 
+## Core Annotations
+
+### @SpringClient
+
+Type-level annotation that marks an interface as a protocol client.
+
+| Attribute   | Type           | Required | Description |
+|-------------|----------------|----------|-------------|
+| `protocol`  | `ProtocolType` | Yes      | `GRPC`, `REST`, `GRAPHQL`, or `RSOCKET` |
+| `serviceId` | `String`       | Yes      | Maps to `spring.protocol.{protocol}.clients.{serviceId}.address` |
+| `grpcClass` | `Class<?>`     | gRPC only | The generated gRPC class containing `newBlockingStub` |
+
+### @ProtocolMapping
+
+Method-level annotation that maps an interface method to a protocol operation.
+
+| Attribute        | Protocols     | Description |
+|------------------|---------------|-------------|
+| `value`          | gRPC, REST    | gRPC: stub method name. REST: URL path (e.g., `/users/{id}`) |
+| `method`         | REST          | HTTP method: `GET`, `POST`, `PUT`, `DELETE`, `PATCH` |
+| `query`          | GraphQL       | GraphQL query or mutation string |
+| `operationType`  | GraphQL       | `QUERY` (default) or `MUTATION` |
+| `route`          | RSocket       | RSocket route (e.g., `notify`, `scores.stream`) |
+| `interaction`    | RSocket       | `REQUEST_RESPONSE` (default), `FIRE_AND_FORGET`, `REQUEST_STREAM` |
+
 ## Project Structure
 
 ```
@@ -78,3 +103,10 @@ spring-protocol/
 4. The `ProtocolRegistry` dispatches to the correct `ProtocolClientHandler` (gRPC, REST, GraphQL, or RSocket).
 5. The handler creates a JDK Dynamic Proxy backed by a protocol-specific `AbstractClientProxy` subclass.
 6. Method metadata is cached in `ConcurrentHashMap` -- reflection happens only once per method.
+
+## Protocol Guides
+
+- [gRPC Quick Start](grpc/quick-start.md)
+- [REST Quick Start](rest/quick-start.md)
+- [GraphQL Quick Start](graphql/quick-start.md)
+- [RSocket Quick Start](rsocket/quick-start.md)

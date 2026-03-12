@@ -7,9 +7,9 @@ A declarative client framework for Spring Boot that unifies multiple communicati
 | Protocol | Status | Description |
 |----------|--------|-------------|
 | gRPC     | Implemented | Blocking stub proxy with reflection-based stub factory |
-| REST     | Skeleton | JDK HttpClient based REST client |
-| GraphQL  | Skeleton | HTTP-based GraphQL query/mutation client |
-| RSocket  | Skeleton | Reactive binary protocol client |
+| REST     | Implemented | JDK HttpClient + Jackson with path variable substitution and JSON serialization |
+| GraphQL  | Implemented | HTTP POST with query/variables, automatic response data unwrapping |
+| RSocket  | Implemented | REQUEST_RESPONSE, FIRE_AND_FORGET, REQUEST_STREAM via rsocket-java |
 
 ## Quick Start
 
@@ -70,19 +70,37 @@ public interface UserClient {
 
     @ProtocolMapping(value = "/users/{id}", method = "GET")
     User getUser(String id);
+
+    @ProtocolMapping(value = "/users", method = "POST")
+    User createUser(CreateUserRequest request);
+
+    @ProtocolMapping(value = "/users/{id}", method = "DELETE")
+    void deleteUser(String id);
 }
 
 // GraphQL Client
 @SpringClient(protocol = ProtocolType.GRAPHQL, serviceId = "user-service")
 public interface UserGraphqlClient {
 
-    @ProtocolMapping(query = "{ user(id: $id) { name email } }")
+    @ProtocolMapping(query = "query GetUser($id: ID!) { user(id: $id) { id name email } }")
     UserDto getUser(String id);
+
+    @ProtocolMapping(
+            query = "mutation CreateUser($name: String!, $email: String!) { createUser(name: $name, email: $email) { id name email } }",
+            operationType = "MUTATION"
+    )
+    UserDto createUser(String name, String email);
 }
 
 // RSocket Client
 @SpringClient(protocol = ProtocolType.RSOCKET, serviceId = "notification-service")
 public interface NotificationClient {
+
+    @ProtocolMapping(route = "notify", interaction = "REQUEST_RESPONSE")
+    NotificationResponse sendNotification(NotificationRequest request);
+
+    @ProtocolMapping(route = "notify.fire", interaction = "FIRE_AND_FORGET")
+    void fireNotification(NotificationRequest request);
 
     @ProtocolMapping(route = "scores.stream", interaction = "REQUEST_STREAM")
     Flux<Score> streamScores(String matchId);
@@ -93,7 +111,7 @@ public interface NotificationClient {
 
 ```java
 @SpringBootApplication
-@EnableSpringClients(basePackages = "spring.protocol.client")
+@EnableSpringClients(basePackages = "io.springprotocol.examples")
 public class MyApplication {
     public static void main(String[] args) {
         SpringApplication.run(MyApplication.class, args);
@@ -126,23 +144,27 @@ spring-protocol/
 ├── spring-protocol-spring/             # @EnableSpringClients, registrar, factory bean
 ├── spring-protocol-boot/               # Auto-configuration, unified properties
 ├── spring-protocol-grpc/               # gRPC implementation
-│   ├── grpc-client-core
-│   ├── grpc-client-spring
-│   └── grpc-client-spring-boot-starter
+│   ├── grpc-client-core                #   Stub factory, channel caching, proxy
+│   ├── grpc-client-spring              #   (reserved for Spring integration)
+│   └── grpc-client-spring-boot-starter #   Auto-configuration
 ├── spring-protocol-rest/               # REST implementation
-│   ├── rest-client-core
-│   ├── rest-client-spring
-│   └── rest-client-spring-boot-starter
+│   ├── rest-client-core                #   JDK HttpClient, Jackson, path variables
+│   ├── rest-client-spring              #   (reserved for Spring integration)
+│   └── rest-client-spring-boot-starter #   Auto-configuration
 ├── spring-protocol-graphql/            # GraphQL implementation
-│   ├── graphql-client-core
-│   ├── graphql-client-spring
-│   └── graphql-client-spring-boot-starter
+│   ├── graphql-client-core             #   HTTP POST, query/variables, error handling
+│   ├── graphql-client-spring           #   (reserved for Spring integration)
+│   └── graphql-client-spring-boot-starter # Auto-configuration
 ├── spring-protocol-rsocket/            # RSocket implementation
-│   ├── rsocket-client-core
-│   ├── rsocket-client-spring
-│   └── rsocket-client-spring-boot-starter
+│   ├── rsocket-client-core             #   TCP transport, interaction models, Flux
+│   ├── rsocket-client-spring           #   (reserved for Spring integration)
+│   └── rsocket-client-spring-boot-starter # Auto-configuration
 ├── spring-protocol-test/               # Test utilities
 ├── spring-protocol-examples/           # Usage examples per protocol
+│   ├── grpc-example                    #   GreeterClient + proto generation
+│   ├── rest-example                    #   UserClient with CRUD operations
+│   ├── graphql-example                 #   UserGraphqlClient with query/mutation
+│   └── rsocket-example                 #   NotificationClient with 3 interaction models
 └── spring-protocol-docs/               # EN/KR documentation
 ```
 
@@ -153,6 +175,15 @@ spring-protocol/
 - **Separation of Concerns**: Core has zero Spring dependency. Protocol logic, Spring integration, and Boot auto-config are in separate modules.
 - **Performance**: Method metadata and stub instances cached in `ConcurrentHashMap`. Reflection happens once per method.
 - **Resilience**: Managed connections are shared per service and gracefully shut down on application stop.
+
+### How It Works
+
+1. `@EnableSpringClients` triggers classpath scanning for `@SpringClient` interfaces.
+2. For each interface, a `SpringClientFactoryBean` is registered.
+3. The factory bean resolves connection info from `spring.protocol.{protocol}.clients.{id}.address`.
+4. The `ProtocolRegistry` dispatches to the correct `ProtocolClientHandler`.
+5. The handler creates a JDK Dynamic Proxy backed by a protocol-specific `AbstractClientProxy` subclass.
+6. Method metadata is cached in `ConcurrentHashMap` -- reflection happens only once per method.
 
 ## Requirements
 

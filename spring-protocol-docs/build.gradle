@@ -1,0 +1,10 @@
+// Documentation module - no compiled sources
+// Contains user guides, API documentation, and architecture decision records
+
+tasks.register('generateDocs') {
+    description = 'Generates project documentation'
+    group = 'documentation'
+    doLast {
+        println 'Documentation generation placeholder'
+    }
+}

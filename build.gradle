@@ -1,0 +1,30 @@
+plugins {
+    id 'java'
+    id 'io.spring.dependency-management' version '1.1.4' apply false
+}
+
+allprojects {
+    group = 'io.spring-protocol'
+    version = '0.1.0-SNAPSHOT'
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java-library'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    dependencies {
+        compileOnly 'org.slf4j:slf4j-api:2.0.9'
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+}

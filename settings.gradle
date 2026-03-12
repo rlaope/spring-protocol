@@ -1,0 +1,15 @@
+rootProject.name = 'spring-protocol'
+
+// gRPC Client Modules
+include 'spring-protocol-grpc:grpc-client-core'
+include 'spring-protocol-grpc:grpc-client-spring'
+include 'spring-protocol-grpc:grpc-client-spring-boot-starter'
+
+// Testing Support
+include 'spring-protocol-test'
+
+// Documentation
+include 'spring-protocol-docs'
+
+// Examples
+include 'spring-protocol-examples:grpc-example'

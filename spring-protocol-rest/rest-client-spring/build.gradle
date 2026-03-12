@@ -1,0 +1,6 @@
+dependencies {
+    api project(':spring-protocol-rest:rest-client-core')
+    compileOnly 'org.springframework:spring-context:6.1.4'
+    compileOnly 'org.springframework:spring-beans:6.1.4'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+}

@@ -1,0 +1,4 @@
+dependencies {
+    api project(':spring-protocol-core')
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+}

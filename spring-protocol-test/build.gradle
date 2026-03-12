@@ -1,0 +1,11 @@
+dependencies {
+    api project(':spring-protocol-grpc:grpc-client-core')
+    api project(':spring-protocol-grpc:grpc-client-spring')
+
+    compileOnly 'org.springframework:spring-context:6.1.4'
+    compileOnly 'org.springframework:spring-test:6.1.4'
+    compileOnly 'io.grpc:grpc-stub:1.62.2'
+    compileOnly 'io.grpc:grpc-api:1.62.2'
+    compileOnly 'io.grpc:grpc-testing:1.62.2'
+    compileOnly 'org.junit.jupiter:junit-jupiter:5.10.2'
+}

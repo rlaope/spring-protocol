@@ -1,18 +1,15 @@
 # Spring Protocol
 
-A declarative client framework for Spring Boot that unifies multiple communication protocols (gRPC, GraphQL, REST, RSocket) behind a consistent annotation-driven programming model.
+A declarative client framework for Spring Boot that unifies multiple communication protocols behind a consistent annotation-driven programming model.
 
-## Modules
+## Supported Protocols
 
-### gRPC Client (`spring-protocol-grpc`)
-
-Declarative gRPC client inspired by Spring Cloud OpenFeign. Define interfaces with annotations and let Spring Protocol handle stub creation, channel management, and method dispatch automatically.
-
-| Module | Description |
-|--------|-------------|
-| `grpc-client-core` | Annotations (`@GrpcExchange`, `@GrpcMapping`), JDK Dynamic Proxy, stub creation & caching |
-| `grpc-client-spring` | `ImportBeanDefinitionRegistrar` for automatic bean scanning and registration |
-| `grpc-client-spring-boot-starter` | Auto-configuration and `application.yml` property binding |
+| Protocol | Status | Description |
+|----------|--------|-------------|
+| gRPC     | Implemented | Blocking stub proxy with reflection-based stub factory |
+| REST     | Skeleton | JDK HttpClient based REST client |
+| GraphQL  | Skeleton | HTTP-based GraphQL query/mutation client |
+| RSocket  | Skeleton | Reactive binary protocol client |
 
 ## Quick Start
 
@@ -20,27 +17,75 @@ Declarative gRPC client inspired by Spring Cloud OpenFeign. Define interfaces wi
 
 ```gradle
 dependencies {
+    // Unified boot starter (required)
+    implementation 'io.spring-protocol:spring-protocol-boot:0.1.0-SNAPSHOT'
+
+    // Protocol-specific starter (pick what you need)
     implementation 'io.spring-protocol:grpc-client-spring-boot-starter:0.1.0-SNAPSHOT'
+    implementation 'io.spring-protocol:rest-client-spring-boot-starter:0.1.0-SNAPSHOT'
+    implementation 'io.spring-protocol:graphql-client-spring-boot-starter:0.1.0-SNAPSHOT'
+    implementation 'io.spring-protocol:rsocket-client-spring-boot-starter:0.1.0-SNAPSHOT'
 }
 ```
 
-### 2. Configure Target Address
+### 2. Configure Target Services
 
 ```yaml
-grpc:
-  client:
-    greeter-service:
-      address: localhost:9090
+spring:
+  protocol:
+    grpc:
+      clients:
+        greeter-service:
+          address: localhost:9090
+    rest:
+      clients:
+        user-service:
+          address: http://localhost:8081
+    graphql:
+      clients:
+        user-service:
+          address: http://localhost:8080/graphql
+    rsocket:
+      clients:
+        notification-service:
+          address: localhost:7000
 ```
 
-### 3. Define Client Interface
+### 3. Define Client Interfaces
 
 ```java
-@GrpcExchange(grpcClass = GreeterGrpc.class, serviceId = "greeter-service")
+// gRPC Client
+@SpringClient(protocol = ProtocolType.GRPC, serviceId = "greeter-service", grpcClass = GreeterGrpc.class)
 public interface GreeterClient {
 
-    @GrpcMapping("sayHello")
     HelloReply sayHello(HelloRequest request);
+
+    @ProtocolMapping("sayHelloAgain")
+    HelloReply greetAgain(HelloRequest request);
+}
+
+// REST Client
+@SpringClient(protocol = ProtocolType.REST, serviceId = "user-service")
+public interface UserClient {
+
+    @ProtocolMapping(value = "/users/{id}", method = "GET")
+    User getUser(String id);
+}
+
+// GraphQL Client
+@SpringClient(protocol = ProtocolType.GRAPHQL, serviceId = "user-service")
+public interface UserGraphqlClient {
+
+    @ProtocolMapping(query = "{ user(id: $id) { name email } }")
+    UserDto getUser(String id);
+}
+
+// RSocket Client
+@SpringClient(protocol = ProtocolType.RSOCKET, serviceId = "notification-service")
+public interface NotificationClient {
+
+    @ProtocolMapping(route = "scores.stream", interaction = "REQUEST_STREAM")
+    Flux<Score> streamScores(String matchId);
 }
 ```
 
@@ -48,7 +93,7 @@ public interface GreeterClient {
 
 ```java
 @SpringBootApplication
-@EnableGrpcClients(basePackages = "com.example.client")
+@EnableSpringClients(basePackages = "spring.protocol.client")
 public class MyApplication {
     public static void main(String[] args) {
         SpringApplication.run(MyApplication.class, args);
@@ -68,8 +113,7 @@ public class GreetingService {
         HelloRequest request = HelloRequest.newBuilder()
                 .setName(name)
                 .build();
-        HelloReply reply = greeterClient.sayHello(request);
-        return reply.getMessage();
+        return greeterClient.sayHello(request).getMessage();
     }
 }
 ```
@@ -77,28 +121,43 @@ public class GreetingService {
 ## Architecture
 
 ```
-spring-protocol
-├── spring-protocol-grpc
-│   ├── grpc-client-core          # Zero Spring dependency
-│   ├── grpc-client-spring        # Spring integration layer
-│   └── grpc-client-spring-boot-starter  # Auto-configuration
-├── spring-protocol-graphql       # (planned)
-├── spring-protocol-rest          # (planned)
-└── spring-protocol-rsocket       # (planned)
+spring-protocol/
+├── spring-protocol-core/               # Unified annotations, SPI, proxy base
+├── spring-protocol-spring/             # @EnableSpringClients, registrar, factory bean
+├── spring-protocol-boot/               # Auto-configuration, unified properties
+├── spring-protocol-grpc/               # gRPC implementation
+│   ├── grpc-client-core
+│   ├── grpc-client-spring
+│   └── grpc-client-spring-boot-starter
+├── spring-protocol-rest/               # REST implementation
+│   ├── rest-client-core
+│   ├── rest-client-spring
+│   └── rest-client-spring-boot-starter
+├── spring-protocol-graphql/            # GraphQL implementation
+│   ├── graphql-client-core
+│   ├── graphql-client-spring
+│   └── graphql-client-spring-boot-starter
+├── spring-protocol-rsocket/            # RSocket implementation
+│   ├── rsocket-client-core
+│   ├── rsocket-client-spring
+│   └── rsocket-client-spring-boot-starter
+├── spring-protocol-test/               # Test utilities
+├── spring-protocol-examples/           # Usage examples per protocol
+└── spring-protocol-docs/               # EN/KR documentation
 ```
 
 ### Design Principles
 
-- **Separation of Concerns**: Core proxy logic has no Spring dependency. Spring integration and Boot auto-config are in separate modules.
-- **Performance**: Stub instances and method metadata are cached in `ConcurrentHashMap`. Reflection happens once per method, not per call.
-- **Resilience**: `ManagedChannel` instances are shared per service address and gracefully shut down on application stop.
-- **Convention over Configuration**: Method names map to stub methods by default. Use `@GrpcMapping` only when names differ.
+- **Unified API**: Single `@SpringClient` + `@ProtocolMapping` for all protocols. No protocol-specific annotations needed.
+- **Protocol SPI**: `ProtocolClientHandler` interface allows pluggable protocol implementations auto-discovered via Spring Boot.
+- **Separation of Concerns**: Core has zero Spring dependency. Protocol logic, Spring integration, and Boot auto-config are in separate modules.
+- **Performance**: Method metadata and stub instances cached in `ConcurrentHashMap`. Reflection happens once per method.
+- **Resilience**: Managed connections are shared per service and gracefully shut down on application stop.
 
 ## Requirements
 
 - Java 17+
 - Spring Boot 3.x
-- gRPC stubs generated from `.proto` files
 
 ## Building
 

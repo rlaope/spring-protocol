@@ -1,0 +1,22 @@
+plugins {
+    id 'io.spring.dependency-management'
+    id 'application'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom 'org.springframework.boot:spring-boot-dependencies:3.2.3'
+    }
+}
+
+dependencies {
+    implementation project(':spring-protocol-boot')
+    implementation project(':spring-protocol-rest:rest-client-spring-boot-starter')
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+}
+
+application {
+    mainClass = 'io.springprotocol.examples.rest.RestExampleApplication'
+}

@@ -1,0 +1,6 @@
+spring:
+  protocol:
+    rsocket:
+      clients:
+        notification-service:
+          address: localhost:7000

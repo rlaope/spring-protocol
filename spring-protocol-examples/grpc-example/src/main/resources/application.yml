@@ -1,4 +1,6 @@
-grpc:
-  client:
-    greeter-service:
-      address: localhost:9090
+spring:
+  protocol:
+    grpc:
+      clients:
+        greeter-service:
+          address: localhost:9090

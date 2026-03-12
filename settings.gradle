@@ -1,9 +1,29 @@
 rootProject.name = 'spring-protocol'
 
+// Core
+include 'spring-protocol-core'
+include 'spring-protocol-spring'
+include 'spring-protocol-boot'
+
 // gRPC Client Modules
 include 'spring-protocol-grpc:grpc-client-core'
 include 'spring-protocol-grpc:grpc-client-spring'
 include 'spring-protocol-grpc:grpc-client-spring-boot-starter'
+
+// REST Client Modules
+include 'spring-protocol-rest:rest-client-core'
+include 'spring-protocol-rest:rest-client-spring'
+include 'spring-protocol-rest:rest-client-spring-boot-starter'
+
+// GraphQL Client Modules
+include 'spring-protocol-graphql:graphql-client-core'
+include 'spring-protocol-graphql:graphql-client-spring'
+include 'spring-protocol-graphql:graphql-client-spring-boot-starter'
+
+// RSocket Client Modules
+include 'spring-protocol-rsocket:rsocket-client-core'
+include 'spring-protocol-rsocket:rsocket-client-spring'
+include 'spring-protocol-rsocket:rsocket-client-spring-boot-starter'
 
 // Testing Support
 include 'spring-protocol-test'
@@ -13,3 +33,6 @@ include 'spring-protocol-docs'
 
 // Examples
 include 'spring-protocol-examples:grpc-example'
+include 'spring-protocol-examples:rest-example'
+include 'spring-protocol-examples:graphql-example'
+include 'spring-protocol-examples:rsocket-example'

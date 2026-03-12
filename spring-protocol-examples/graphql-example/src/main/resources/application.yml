@@ -1,0 +1,6 @@
+spring:
+  protocol:
+    graphql:
+      clients:
+        user-service:
+          address: http://localhost:8080/graphql

@@ -1,0 +1,6 @@
+spring:
+  protocol:
+    rest:
+      clients:
+        user-service:
+          address: http://localhost:8081

@@ -1,0 +1,24 @@
+plugins {
+    id 'io.spring.dependency-management'
+    id 'application'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom 'org.springframework.boot:spring-boot-dependencies:3.2.3'
+    }
+}
+
+dependencies {
+    implementation project(':spring-protocol-boot')
+    implementation project(':spring-protocol-rsocket:rsocket-client-spring-boot-starter')
+
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'io.rsocket:rsocket-core:1.1.4'
+    implementation 'io.rsocket:rsocket-transport-netty:1.1.4'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+}
+
+application {
+    mainClass = 'io.springprotocol.examples.rsocket.RSocketExampleApplication'
+}

@@ -1,4 +1,8 @@
 dependencies {
     api project(':spring-protocol-core')
+    api 'com.fasterxml.jackson.core:jackson-databind:2.16.1'
+    api 'io.rsocket:rsocket-core:1.1.4'
+    api 'io.rsocket:rsocket-transport-netty:1.1.4'
+    api 'io.projectreactor:reactor-core:3.6.3'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
 }

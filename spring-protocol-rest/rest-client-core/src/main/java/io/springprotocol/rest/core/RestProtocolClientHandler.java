@@ -1,26 +1,30 @@
 package io.springprotocol.rest.core;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.springprotocol.core.annotation.ProtocolType;
 import io.springprotocol.core.spi.ClientDefinition;
 import io.springprotocol.core.spi.ProtocolClientHandler;
 
 import java.lang.reflect.Proxy;
 import java.net.http.HttpClient;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
-/**
- * REST implementation of {@link ProtocolClientHandler}.
- * Creates JDK dynamic proxies backed by {@link RestClientProxy}.
- */
 public class RestProtocolClientHandler implements ProtocolClientHandler {
 
     private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
+    private final ConcurrentMap<Class<?>, Object> proxyCache = new ConcurrentHashMap<>();
 
     public RestProtocolClientHandler() {
         this.httpClient = HttpClient.newHttpClient();
+        this.objectMapper = createObjectMapper();
     }
 
-    public RestProtocolClientHandler(HttpClient httpClient) {
+    public RestProtocolClientHandler(HttpClient httpClient, ObjectMapper objectMapper) {
         this.httpClient = httpClient;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -30,21 +34,29 @@ public class RestProtocolClientHandler implements ProtocolClientHandler {
 
     @Override
     public Object createProxy(ClientDefinition definition) {
-        String baseUrl = (String) definition.attributes().get("address");
-        if (baseUrl == null) {
-            baseUrl = "";
-        }
+        return proxyCache.computeIfAbsent(definition.interfaceType(), type -> {
+            String baseUrl = (String) definition.attributes().get("address");
+            if (baseUrl == null) {
+                baseUrl = "";
+            }
 
-        var handler = new RestClientProxy(baseUrl, httpClient);
-        return Proxy.newProxyInstance(
-                definition.interfaceType().getClassLoader(),
-                new Class<?>[]{definition.interfaceType()},
-                handler
-        );
+            var handler = new RestClientProxy(baseUrl, httpClient, objectMapper);
+            return Proxy.newProxyInstance(
+                    type.getClassLoader(),
+                    new Class<?>[]{type},
+                    handler
+            );
+        });
     }
 
     @Override
     public void destroy() {
-        // no-op: HttpClient manages its own lifecycle
+        proxyCache.clear();
+    }
+
+    private static ObjectMapper createObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        return mapper;
     }
 }

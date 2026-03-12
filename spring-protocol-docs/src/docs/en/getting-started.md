@@ -2,7 +2,11 @@
 
 ## Overview
 
-Spring Protocol is a declarative client framework for Spring Boot that provides a unified, annotation-driven programming model for multiple communication protocols including gRPC, GraphQL, REST, and RSocket.
+Spring Protocol is a declarative client framework for Spring Boot that provides a unified, annotation-driven programming model for multiple communication protocols: gRPC, REST, GraphQL, and RSocket.
+
+All protocols share the same two annotations:
+- `@SpringClient` - marks an interface as a protocol client
+- `@ProtocolMapping` - maps methods to protocol-specific operations
 
 ## Requirements
 
@@ -12,37 +16,65 @@ Spring Protocol is a declarative client framework for Spring Boot that provides 
 
 ## Installation
 
-Add the starter dependency for the protocol you need:
-
-### gRPC Client
+Add the unified boot starter and the protocol-specific starter you need:
 
 ```gradle
 dependencies {
+    // Always required
+    implementation 'io.spring-protocol:spring-protocol-boot:0.1.0-SNAPSHOT'
+
+    // Pick your protocol(s)
     implementation 'io.spring-protocol:grpc-client-spring-boot-starter:0.1.0-SNAPSHOT'
+    implementation 'io.spring-protocol:rest-client-spring-boot-starter:0.1.0-SNAPSHOT'
+    implementation 'io.spring-protocol:graphql-client-spring-boot-starter:0.1.0-SNAPSHOT'
+    implementation 'io.spring-protocol:rsocket-client-spring-boot-starter:0.1.0-SNAPSHOT'
 }
+```
+
+## Unified Configuration
+
+```yaml
+spring:
+  protocol:
+    grpc:
+      clients:
+        greeter-service:
+          address: localhost:9090
+    rest:
+      clients:
+        user-service:
+          address: http://localhost:8081
+    graphql:
+      clients:
+        user-service:
+          address: http://localhost:8080/graphql
+    rsocket:
+      clients:
+        notification-service:
+          address: localhost:7000
 ```
 
 ## Project Structure
 
 ```
-spring-protocol
-├── spring-protocol-grpc/           # gRPC client modules
-│   ├── grpc-client-core            # Annotations, proxy, stub caching
-│   ├── grpc-client-spring          # Spring bean registration
-│   └── grpc-client-spring-boot-starter  # Auto-configuration
+spring-protocol/
+├── spring-protocol-core/           # Unified annotations (@SpringClient, @ProtocolMapping), SPI
+├── spring-protocol-spring/         # @EnableSpringClients, bean registration
+├── spring-protocol-boot/           # Auto-configuration, ProtocolRegistry
+├── spring-protocol-grpc/           # gRPC client implementation
+├── spring-protocol-rest/           # REST client implementation
+├── spring-protocol-graphql/        # GraphQL client implementation
+├── spring-protocol-rsocket/        # RSocket client implementation
 ├── spring-protocol-test/           # Test utilities
-├── spring-protocol-examples/       # Usage examples
+├── spring-protocol-examples/       # Usage examples per protocol
 └── spring-protocol-docs/           # Documentation (this module)
 ```
 
-## Module Dependency Graph
+## How It Works
 
-```
-spring-boot-starter → grpc-client-spring → grpc-client-core
-```
-
-Each module has a clear responsibility:
-
-- **grpc-client-core**: Zero Spring dependency. Contains annotations, JDK Dynamic Proxy logic, stub creation via reflection, and channel management.
-- **grpc-client-spring**: Spring integration layer. Registers `@GrpcExchange` interfaces as Spring beans using `ImportBeanDefinitionRegistrar`.
-- **grpc-client-spring-boot-starter**: Spring Boot auto-configuration. Reads `application.yml` properties and wires infrastructure beans.
+1. `@EnableSpringClients` triggers classpath scanning for `@SpringClient` interfaces.
+2. For each interface, a `SpringClientFactoryBean` is registered.
+3. The factory bean resolves connection info from `spring.protocol.{protocol}.clients.{id}.address`.
+4. The `ProtocolRegistry` dispatches to the correct `ProtocolClientHandler` (gRPC, REST, GraphQL, or RSocket).
+5. The handler creates a JDK Dynamic Proxy backed by a protocol-specific `AbstractClientProxy` subclass.
+6. Method metadata is cached in `ConcurrentHashMap` -- reflection happens only once per method.

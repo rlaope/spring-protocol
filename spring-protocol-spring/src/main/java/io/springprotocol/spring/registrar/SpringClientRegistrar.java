@@ -11,6 +11,7 @@ import org.springframework.context.annotation.ClassPathScanningCandidateComponen
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.type.AnnotationMetadata;
+import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
@@ -99,7 +100,13 @@ public class SpringClientRegistrar implements ImportBeanDefinitionRegistrar {
 
     private ClassPathScanningCandidateComponentProvider createScanner() {
         ClassPathScanningCandidateComponentProvider scanner =
-                new ClassPathScanningCandidateComponentProvider(false);
+                new ClassPathScanningCandidateComponentProvider(false) {
+                    @Override
+                    protected boolean isCandidateComponent(AnnotatedBeanDefinition beanDefinition) {
+                        return beanDefinition.getMetadata().isInterface()
+                                && beanDefinition.getMetadata().isIndependent();
+                    }
+                };
         scanner.addIncludeFilter(new AnnotationTypeFilter(SpringClient.class));
         return scanner;
     }

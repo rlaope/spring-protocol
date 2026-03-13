@@ -21,6 +21,10 @@ subprojects {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    tasks.withType(JavaCompile).configureEach {
+        options.compilerArgs.add('-parameters')
+    }
+
     dependencies {
         compileOnly 'org.slf4j:slf4j-api:2.0.9'
     }
